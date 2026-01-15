@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:simpleshop/firebase_options.dart';
 import 'package:simpleshop/screens/auth/auth_wrapper.dart';
 import 'package:simpleshop/screens/auth/sign_in_screen.dart';
-import 'package:simpleshop/screens/home/home_screen.dart';
+import 'package:simpleshop/screens/home/landing_home_screen.dart';
+import 'package:simpleshop/screens/navigation/main_navigation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,11 +26,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SimpleShop',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5)),
+      ),
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthWrapper(),
         '/signin': (context) => const SignInScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const MainNavigation(),
+        '/landing': (context) => const LandingHomeScreen(),
       },
     );
   }
@@ -103,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('You have pushed the button this many times:'),
             Text(

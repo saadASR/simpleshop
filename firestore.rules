@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection: users can create their own document with role 'user' only and cannot change role later
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId && request.resource.data.role == 'user';
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.role == resource.data.role; // cannot modify role
+      allow delete: if false; // users cannot delete their user doc
+    }
+
+    // Products: only admins can create/update/delete
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Carts: each user can read/write only their own cart document
+    match /carts/{userId} {
+      allow read, create, update: if request.auth != null
+        && request.auth.uid == userId;
+      allow delete: if request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    // Orders: read rules allow relevant parties; deliverers can update status of their assigned orders
+    match /orders/{orderId} {
+      allow create: if request.auth != null
+        && request.resource.data.customerId == request.auth.uid;
+      allow read: if request.auth != null && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.delivererId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+
+      allow update: if request.auth != null && (
+        // deliverer can update status only for orders assigned to them
+        (request.auth.uid == resource.data.delivererId
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status','updatedAt']))
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+
+      allow delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    } 
+
+    // Delivery invites: admins can create and manage invites
+    match /delivery_invites/{inviteId} {
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Default: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

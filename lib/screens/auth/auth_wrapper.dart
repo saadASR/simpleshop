@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:simpleshop/screens/auth/sign_in_screen.dart';
 
-import '../home/home_screen.dart';
+import '../navigation/main_navigation.dart';
 
 
 class AuthWrapper extends StatelessWidget {
@@ -53,7 +53,7 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (snapshot.hasData) {
-          return const HomeScreen();
+          return const MainNavigation();
         }
 
         return const SignInScreen();

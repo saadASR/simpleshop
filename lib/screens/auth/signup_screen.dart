@@ -120,6 +120,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'birthday': _birthdayController.text.trim(),
         'email': _emailController.text.trim(),
         'photoUrl': photoUrl,
+        'role': 'user',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
