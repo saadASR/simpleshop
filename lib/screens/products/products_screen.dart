@@ -4,9 +4,26 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../user/cart_drawer.dart';
 import 'product_detail_screen.dart';
+import '../../widgets/app_product_card.dart';
+import '../../widgets/app_search_field.dart';
+import '../../widgets/app_section_header.dart';
 
-class ProductsScreen extends StatelessWidget {
+class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
+
+  @override
+  State<ProductsScreen> createState() => _ProductsScreenState();
+}
+
+class _ProductsScreenState extends State<ProductsScreen> {
+  String _query = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,15 +37,6 @@ class ProductsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Produits'),
         actions: [
-          Builder(
-            builder: (context) {
-              return IconButton(
-                tooltip: 'Panier',
-                icon: const Icon(Icons.shopping_cart_outlined),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              );
-            },
-          ),
           IconButton(
             tooltip: 'Se déconnecter',
             icon: const Icon(Icons.logout),
@@ -67,156 +75,144 @@ class ProductsScreen extends StatelessWidget {
 
           final products = snapshot.data!.docs;
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisExtent: tileExtent,
-              childAspectRatio: gridAspectRatio,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: products.length,
-            itemBuilder: (context, index) {
-              final product = products[index].data() as Map<String, dynamic>;
-              final productId = products[index].id;
-              final String name = product['name'] ?? 'Unknown Product';
-              final String description = product['description'] ?? 'No description';
-              final double price = (product['price'] ?? 0).toDouble();
-              final String? imageUrl = (product['imageUrl'] ?? product['photoUrl']) as String?;
+          final query = _query.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+          final filtered = query.isEmpty
+              ? products
+              : products.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final n = (data['name'] ?? '').toString().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+                  final d = (data['description'] ?? '').toString().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+                  return n.contains(query) || d.contains(query);
+                }).toList();
 
-              Future<void> addToCart() async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Veuillez vous connecter.')),
-                  );
-                  return;
-                }
-
-                final cartRef = FirebaseFirestore.instance.collection('carts').doc(user.uid);
-                final doc = await cartRef.get();
-                List items = [];
-                if (doc.exists) items = List.from(doc.data()!['items'] ?? []);
-
-                final idx = items.indexWhere((e) => e['productId'] == productId);
-                final photoUrl = product['photoUrl'] ?? product['imageUrl'];
-
-                if (idx >= 0) {
-                  items[idx]['qty'] = ((items[idx]['qty'] ?? 1) as num).toInt() + 1;
-                } else {
-                  items.add({
-                    'productId': productId,
-                    'name': product['name'] ?? '',
-                    'price': product['price'] ?? 0,
-                    'photoUrl': photoUrl,
-                    'qty': 1,
-                  });
-                }
-
-                await cartRef.set({'items': items});
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ajouté au panier.')),
-                  );
-                }
-              }
-
-              return InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProductDetailScreen(
-                        productId: productId,
-                        product: product,
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppSectionHeader(
+                      title: 'Catalogue',
+                      subtitle: 'Trouvez ce dont vous avez besoin',
+                      trailing: Builder(
+                        builder: (context) {
+                          return IconButton(
+                            tooltip: 'Panier',
+                            icon: const Icon(Icons.shopping_cart_outlined),
+                            onPressed: () => Scaffold.of(context).openDrawer(),
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Container(
-                          width: double.infinity,
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: imageUrl != null
-                              ? Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(child: Icon(Icons.image, size: 42));
-                                  },
-                                )
-                              : const Center(child: Icon(Icons.image, size: 42)),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
+                    const SizedBox(height: 12),
+                    AppSearchField(
+                      hintText: 'Rechercher un produit…',
+                      controller: _searchController,
+                      onChanged: (v) => setState(() => _query = v),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              const Icon(Icons.search_off, size: 56, color: Colors.grey),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Aucun résultat',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
-                                description,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[700],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const Spacer(),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${price.toStringAsFixed(2)} €',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    tooltip: 'Ajouter au panier',
-                                    onPressed: addToCart,
-                                    icon: const Icon(Icons.add_shopping_cart),
-                                    padding: EdgeInsets.zero,
-                                    visualDensity: VisualDensity.compact,
-                                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                                  ),
-                                ],
+                                'Essayez un autre mot-clé.',
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                               ),
                             ],
                           ),
                         ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisExtent: tileExtent,
+                          childAspectRatio: gridAspectRatio,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final product = filtered[index].data() as Map<String, dynamic>;
+                          final productId = filtered[index].id;
+                          final String name = product['name'] ?? 'Unknown Product';
+                          final String description = product['description'] ?? 'No description';
+                          final double price = (product['price'] ?? 0).toDouble();
+                          final String? imageUrl = (product['imageUrl'] ?? product['photoUrl']) as String?;
+
+                          Future<void> addToCart() async {
+                            final user = FirebaseAuth.instance.currentUser;
+                            if (user == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Veuillez vous connecter.')),
+                              );
+                              return;
+                            }
+
+                            final cartRef = FirebaseFirestore.instance.collection('carts').doc(user.uid);
+                            final doc = await cartRef.get();
+                            List items = [];
+                            if (doc.exists) items = List.from(doc.data()!['items'] ?? []);
+
+                            final idx = items.indexWhere((e) => e['productId'] == productId);
+                            final photoUrl = product['photoUrl'] ?? product['imageUrl'];
+
+                            if (idx >= 0) {
+                              items[idx]['qty'] = ((items[idx]['qty'] ?? 1) as num).toInt() + 1;
+                            } else {
+                              items.add({
+                                'productId': productId,
+                                'name': product['name'] ?? '',
+                                'price': product['price'] ?? 0,
+                                'photoUrl': photoUrl,
+                                'qty': 1,
+                              });
+                            }
+
+                            await cartRef.set({'items': items});
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Ajouté au panier.')),
+                              );
+                            }
+                          }
+
+                          return AppProductCard(
+                            name: name,
+                            description: description,
+                            price: price,
+                            imageUrl: imageUrl,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ProductDetailScreen(
+                                    productId: productId,
+                                    product: product,
+                                  ),
+                                ),
+                              );
+                            },
+                            onAddToCart: addToCart,
+                          );
+                        },
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),

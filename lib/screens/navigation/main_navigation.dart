@@ -78,14 +78,17 @@ class _MainNavigationState extends State<MainNavigation> {
 
         return Scaffold(
           body: screens[_currentIndex],
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
-            type: BottomNavigationBarType.fixed,
-            items: items,
-            selectedItemColor: Theme.of(context).colorScheme.primary,
-            unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
-            elevation: 8,
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (index) => setState(() => _currentIndex = index),
+            destinations: [
+              for (final it in items)
+                NavigationDestination(
+                  icon: it.icon,
+                  selectedIcon: it.activeIcon ?? it.icon,
+                  label: it.label ?? '',
+                ),
+            ],
           ),
         );
       },

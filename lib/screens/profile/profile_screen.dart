@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../widgets/app_section_header.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -58,14 +60,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: Center(child: Text('Please log in to view your profile')),
       );
     }
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        title: const Text('Profil'),
         actions: [
           IconButton(
+            tooltip: _isEditing ? 'Sauvegarder' : 'Modifier',
             icon: Icon(_isEditing ? Icons.save : Icons.edit),
             onPressed: _toggleEdit,
           ),
@@ -96,7 +98,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 // Profile Header
                 Card(
-                  elevation: 4,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -107,11 +108,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 60,
+                                backgroundColor: cs.surfaceContainerHighest,
                                 backgroundImage: photoUrl != null
                                     ? NetworkImage(photoUrl)
                                     : null,
                                 child: photoUrl == null
-                                    ? const Icon(Icons.person, size: 60)
+                                    ? Icon(Icons.person, size: 60, color: cs.onSurfaceVariant)
                                     : null,
                               ),
                               if (_isEditing)
@@ -121,8 +123,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor,
+                                      color: cs.secondary,
                                       shape: BoxShape.circle,
+                                      border: Border.all(color: cs.surface, width: 2),
                                     ),
                                     child: const Icon(
                                       Icons.camera_alt,
@@ -137,10 +140,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 16),
                         Text(
                           fullName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
                         ),
                         const SizedBox(height: 8),
                         Container(
@@ -149,14 +151,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
+                            color: cs.secondaryContainer,
+                            borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             role[0].toUpperCase() + role.substring(1),
                             style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.bold,
+                              color: cs.onSecondaryContainer,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
@@ -168,18 +170,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // Profile Information
                 Card(
-                  elevation: 2,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Personal Information',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        AppSectionHeader(
+                          title: 'Informations personnelles',
                         ),
                         const SizedBox(height: 16),
                         _buildInfoField(
@@ -220,18 +217,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // Statistics
                 Card(
-                  elevation: 2,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Shopping Statistics',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        AppSectionHeader(
+                          title: 'Statistiques d\'achats',
                         ),
                         const SizedBox(height: 16),
                         StreamBuilder<QuerySnapshot>(
@@ -245,19 +237,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 children: [
                                   Expanded(
                                     child: _buildStatCard(
-                                      'Total Orders',
+                                      'Commandes',
                                       '—',
                                       Icons.shopping_bag,
-                                      Colors.blue,
+                                      cs.primary,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _buildStatCard(
-                                      'Total Spent',
+                                      'Total dépensé',
                                       '—',
                                       Icons.attach_money,
-                                      Colors.green,
+                                      cs.secondary,
                                     ),
                                   ),
                                 ],
@@ -279,19 +271,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               children: [
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Total Orders',
+                                    'Commandes',
                                     totalOrders.toString(),
                                     Icons.shopping_bag,
-                                    Colors.blue,
+                                    cs.primary,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Total Spent',
+                                    'Total dépensé',
                                     '€${totalSpent.toStringAsFixed(2)}',
                                     Icons.attach_money,
-                                    Colors.green,
+                                    cs.secondary,
                                   ),
                                 ),
                               ],
@@ -317,30 +309,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     TextEditingController? controller,
     bool isEditable = false,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, color: Theme.of(context).primaryColor),
+        Icon(icon, color: cs.primary),
         const SizedBox(width: 12),
         SizedBox(
           width: 80,
           child: Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w800, color: cs.onSurfaceVariant),
           ),
         ),
         Expanded(
           child: isEditable && controller != null
               ? TextField(
                   controller: controller,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
                   ),
                 )
-              : Text(value),
+              : Text(
+                  value,
+                  style: TextStyle(fontSize: 16, color: cs.onSurface),
+                ),
         ),
       ],
     );
@@ -350,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -361,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             value,
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
               color: color,
             ),
           ),
@@ -370,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),

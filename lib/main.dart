@@ -5,6 +5,10 @@ import 'package:simpleshop/screens/auth/auth_wrapper.dart';
 import 'package:simpleshop/screens/auth/sign_in_screen.dart';
 import 'package:simpleshop/screens/home/landing_home_screen.dart';
 import 'package:simpleshop/screens/navigation/main_navigation.dart';
+import 'package:simpleshop/screens/onboarding/splash_screen.dart';
+import 'package:simpleshop/screens/onboarding/onboarding_screen.dart';
+import 'package:simpleshop/services/onboarding_service.dart';
+import 'package:simpleshop/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,18 +30,44 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SimpleShop',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5)),
-      ),
+      theme: AppTheme.light(),
       initialRoute: '/',
       routes: {
-        '/': (context) => const AuthWrapper(),
+        '/': (context) => const SplashWrapper(),
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/landing': (context) => const LandingHomeScreen(),
+        '/auth': (context) => const AuthWrapper(),
         '/signin': (context) => const SignInScreen(),
         '/home': (context) => const MainNavigation(),
-        '/landing': (context) => const LandingHomeScreen(),
       },
     );
+  }
+}
+
+class SplashWrapper extends StatefulWidget {
+  const SplashWrapper({super.key});
+
+  @override
+  State<SplashWrapper> createState() => _SplashWrapperState();
+}
+
+class _SplashWrapperState extends State<SplashWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    _decideNextScreen();
+  }
+
+  Future<void> _decideNextScreen() async {
+    final isFirst = await OnboardingService.isFirstLaunch();
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed(isFirst ? '/onboarding' : '/auth');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const SplashScreen();
   }
 }
 

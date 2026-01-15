@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../products/products_screen.dart';
 import '../user/cart_drawer.dart';
+import '../../widgets/app_section_header.dart';
 
 class LandingHomeScreen extends StatelessWidget {
   const LandingHomeScreen({super.key});
@@ -14,7 +15,7 @@ class LandingHomeScreen extends StatelessWidget {
     return Scaffold(
       drawer: const CartDrawer(),
       appBar: AppBar(
-        title: const Text('SimpleShop'),
+        title: const Text('Accueil'),
         actions: [
           Builder(
             builder: (context) {
@@ -34,74 +35,68 @@ class LandingHomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              cs.primary.withOpacity(0.12),
-              cs.surface,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
-                Center(
-                  child: Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: Icon(Icons.storefront, size: 54, color: cs.onPrimaryContainer),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Hero Section
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: cs.secondaryContainer,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Icon(Icons.storefront, size: 44, color: cs.onSecondaryContainer),
+                      ),
+                      const SizedBox(height: 16),
+                      AppSectionHeader(
+                        title: 'Bienvenue sur SimpleShop',
+                        subtitle: 'Découvrez nos produits et commandez en quelques secondes.',
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  'SimpleShop',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+              ),
+              const SizedBox(height: 20),
+              // Quick Actions
+              AppSectionHeader(
+                title: 'Commencer',
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: cs.secondary,
+                  foregroundColor: cs.onSecondary,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Découvrez nos produits et commandez en quelques secondes.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ProductsScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.shopping_bag),
-                  label: const Text('Voir les produits'),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ProductsScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.search),
-                  label: const Text('Parcourir le catalogue'),
-                ),
-              ],
-            ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProductsScreen()),
+                  );
+                },
+                icon: const Icon(Icons.shopping_bag),
+                label: const Text('Voir les produits'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProductsScreen()),
+                  );
+                },
+                icon: const Icon(Icons.search),
+                label: const Text('Parcourir le catalogue'),
+              ),
+            ],
           ),
         ),
       ),

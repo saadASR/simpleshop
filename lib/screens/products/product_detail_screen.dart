@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../order/confirmation_screen.dart';
 import '../user/cart_drawer.dart';
+import '../../widgets/app_section_header.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -116,11 +117,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final p = widget.product;
     final price = ((p['price'] ?? 0) as num).toDouble();
     final imageUrl = (p['photoUrl'] ?? p['imageUrl']) as String?;
+    final cs = Theme.of(context).colorScheme;
+    final total = (price * _qty).toDouble();
 
     return Scaffold(
       drawer: const CartDrawer(),
       appBar: AppBar(
-        title: Text((p['name'] ?? 'Produit').toString()),
+        title: const Text('Détails produit'),
         actions: [
           Builder(
             builder: (context) {
@@ -134,79 +137,127 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          if (imageUrl != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                imageUrl,
-                height: 260,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            )
-          else
-            Container(
-              height: 260,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(child: Icon(Icons.image, size: 56)),
-            ),
-          const SizedBox(height: 12),
-          Text(p['name'] ?? '', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('${price.toStringAsFixed(2)} €', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          Text(p['description'] ?? ''),
-          const SizedBox(height: 18),
           Card(
-            elevation: 0,
+            clipBehavior: Clip.antiAlias,
+            child: SizedBox(
+              height: 280,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (imageUrl != null)
+                    Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: cs.surfaceContainerHighest,
+                          child: const Center(child: Icon(Icons.image_outlined, size: 56)),
+                        );
+                      },
+                    )
+                  else
+                    Container(
+                      color: cs.surfaceContainerHighest,
+                      child: const Center(child: Icon(Icons.image_outlined, size: 56)),
+                    ),
+                  Positioned(
+                    left: 12,
+                    bottom: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: cs.surface.withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.fromBorderSide(
+                          BorderSide(color: cs.outlineVariant.withOpacity(0.7)),
+                        ),
+                      ),
+                      child: Text(
+                        '${price.toStringAsFixed(2)} €',
+                        style: TextStyle(
+                          color: cs.secondary,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AppSectionHeader(
+            title: (p['name'] ?? '').toString(),
+            subtitle: 'Vendu et livré par SimpleShop',
+          ),
+          const SizedBox(height: 10),
+          Text(
+            (p['description'] ?? '').toString(),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  height: 1.35,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Card(
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: Row(
+              child: Column(
                 children: [
-                  const Text('Quantité', style: TextStyle(fontWeight: FontWeight.w600)),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
-                    icon: const Icon(Icons.remove_circle_outline),
+                  Row(
+                    children: [
+                      Text('Quantité', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                      Text('$_qty', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                      IconButton(
+                        onPressed: () => setState(() => _qty++),
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ],
                   ),
-                  Text('$_qty', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                  IconButton(
-                    onPressed: () => setState(() => _qty++),
-                    icon: const Icon(Icons.add_circle_outline),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Text('Total', style: TextStyle(color: cs.onSurfaceVariant)),
+                      const Spacer(),
+                      Text(
+                        '${total.toStringAsFixed(2)} €',
+                        style: TextStyle(color: cs.secondary, fontWeight: FontWeight.w900, fontSize: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _addToCart,
-                  icon: const Icon(Icons.add_shopping_cart),
-                  label: const Text('Ajouter au panier'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _isOrdering ? null : _orderNow,
-                  child: _isOrdering
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Commander'),
-                ),
-              ),
-            ],
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: cs.secondary,
+              foregroundColor: cs.onSecondary,
+            ),
+            onPressed: _addToCart,
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('Ajouter au panier'),
+          ),
+          const SizedBox(height: 10),
+          FilledButton(
+            onPressed: _isOrdering ? null : _orderNow,
+            child: _isOrdering
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Commander maintenant'),
           ),
         ],
       ),
